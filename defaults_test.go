@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -114,5 +116,20 @@ func TestStructFieldPType(t *testing.T) {
 		t.Errorf("set defaults fail: %v", err)
 	} else {
 		s.P.checkFields(t)
+	}
+}
+
+type EnvT struct {
+	N int `default:"$NUM"`
+}
+
+func TestEnvDefault(t *testing.T) {
+	n := 12345
+	os.Setenv("NUM", fmt.Sprintf("%d", n))
+	var e EnvT
+	if err := DefaultConfig(&e); err != nil {
+		t.Errorf("set defaults fail: %v", err)
+	} else {
+		assert(t, "env.N", n, e.N)
 	}
 }
