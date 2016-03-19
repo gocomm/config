@@ -36,6 +36,10 @@ func assertP(t *testing.T, name string, a, b interface{}) {
 type PrimaryT struct {
 	B   bool    `default:"true"`
 	N   int     `default:"12345"`
+	ON  int     `default:"012"`
+	OON int     `default:"0o12"`
+	NN  int     `default:"-0x1a"`
+	UN  uint8   `default:"0b1101"`
 	F   float32 `default:"12.234"`
 	S   string  `default:"hello"`
 	Bp  *bool   `default:"false"`
@@ -45,6 +49,10 @@ type PrimaryT struct {
 func (p *PrimaryT) checkFields(t *testing.T) {
 	assert(t, "p.B", true, p.B)
 	assert(t, "p.N", 12345, p.N)
+	assert(t, "p.ON", 10, p.ON)
+	assert(t, "p.OON", 10, p.OON)
+	assert(t, "p.NN", -0x1a, p.NN)
+	assert(t, "p.UN", uint8(13), p.UN)
 	assert(t, "p.F", float32(12.234), p.F)
 	assert(t, "p.S", "hello", p.S)
 	assertP(t, "p.Bp", false, p.Bp)

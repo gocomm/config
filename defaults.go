@@ -124,7 +124,9 @@ func setPrimaryValue(name, valstr string, v reflect.Value) error {
 			return fmt.Errorf("invalid bool value(%s): %s", name, valstr)
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return parseNum(name, valstr, v.Type().Bits(), v)
+		return parseNum(name, valstr, v.Type().Bits(), false, v)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return parseNum(name, valstr, v.Type().Bits(), true, v)
 	case reflect.Float32, reflect.Float64:
 		if n, err := strconv.ParseFloat(valstr, v.Type().Bits()); err == nil {
 			v.SetFloat(n)
@@ -143,20 +145,25 @@ func setPrimaryValue(name, valstr string, v reflect.Value) error {
 	return nil
 }
 
-var numR = regexp.MustCompile(`^(0[xob]?)?([0-9a-fA-F]+)$`)
+var numR = regexp.MustCompile(`^(-)?(0[xob]?)?([0-9a-fA-F]+)$`)
 
-func parseNum(name, valstr string, bitsize int, val reflect.Value) error {
+func parseNum(name, valstr string, bitsize int, unsigned bool, val reflect.Value) error {
 	parts := numR.FindStringSubmatch(valstr)
 	if len(parts) == 0 {
 		return fmt.Errorf("invalid num value(%s): %s", name, valstr)
 	}
 
+	num := parts[3]
+	if parts[1] == "-" {
+		num = "-" + num
+	}
+
 	base := 10
-	switch len(parts[1]) {
+	switch len(parts[2]) {
 	case 1:
 		base = 8
 	case 2:
-		switch parts[1][1] {
+		switch parts[2][1] {
 		case 'x':
 			base = 16
 		case 'o':
@@ -166,10 +173,20 @@ func parseNum(name, valstr string, bitsize int, val reflect.Value) error {
 		}
 	}
 
-	if n, err := strconv.ParseInt(parts[2], base, bitsize); err != nil {
-		return fmt.Errorf("invalid num value(%s): %s(%v)", name, valstr, err)
+	if unsigned {
+		if n, err := strconv.ParseUint(num, base, bitsize); err != nil {
+			return fmt.Errorf("invalid uint* value(%s): %s(%v)", name, valstr, err)
+		} else {
+			val.SetUint(n)
+			return nil
+		}
 	} else {
-		val.SetInt(n)
-		return nil
+		if n, err := strconv.ParseInt(num, base, bitsize); err != nil {
+			return fmt.Errorf("invalid int* value(%s): %s(%v)", name, valstr, err)
+		} else {
+			val.SetInt(n)
+			return nil
+		}
 	}
+
 }
