@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -132,6 +133,10 @@ func setPrimaryValue(name, valstr string, v reflect.Value) error {
 		}
 	case reflect.String:
 		v.SetString(valstr)
+	case reflect.Array, reflect.Slice, reflect.Map:
+		if err := json.Unmarshal([]byte(valstr), v.Addr().Interface()); err != nil {
+			return fmt.Errorf("invalid array/slice/map(%s): %s(%v)", name, valstr, err)
+		}
 	default:
 		return fmt.Errorf("unsupported default type(%s): %v", name, v.Type())
 	}

@@ -13,6 +13,12 @@ func assert(t *testing.T, name string, a, b interface{}) {
 	}
 }
 
+func assertD(t *testing.T, name string, a, b interface{}) {
+	if !reflect.DeepEqual(a, b) {
+		t.Errorf("%s should be %v, but %v", name, a, b)
+	}
+}
+
 func assertP(t *testing.T, name string, a, b interface{}) {
 	v := reflect.ValueOf(b)
 	for v.Kind() == reflect.Ptr {
@@ -131,5 +137,24 @@ func TestEnvDefault(t *testing.T) {
 		t.Errorf("set defaults fail: %v", err)
 	} else {
 		assert(t, "env.N", n, e.N)
+	}
+}
+
+type AsmT struct {
+	A  [4]int   `default:"[1,2,3,4]"`
+	S  []string `default:"[\"hello\"]"`
+	Sn []string
+	M  map[string]int `default:"{\"key\": 1234}"`
+}
+
+func TestAsmT(t *testing.T) {
+	var a AsmT
+	if err := DefaultConfig(&a); err != nil {
+		t.Errorf("set defaults fail: %v", err)
+	} else {
+		assertD(t, "a.A", [4]int{1, 2, 3, 4}, a.A)
+		assertD(t, "a.S", []string{"hello"}, a.S)
+		assertD(t, "a.Sn", ([]string)(nil), a.Sn)
+		assertD(t, "a.M", map[string]int{"key": 1234}, a.M)
 	}
 }
