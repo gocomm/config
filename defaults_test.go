@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func assert(t *testing.T, name string, a, b interface{}) {
@@ -164,5 +165,18 @@ func TestAsmT(t *testing.T) {
 		assertD(t, "a.S", []string{"hello"}, a.S)
 		assertD(t, "a.Sn", ([]string)(nil), a.Sn)
 		assertD(t, "a.M", map[string]int{"key": 1234}, a.M)
+	}
+}
+
+type TimeT struct {
+	Timeout time.Duration `default:"21m10s99ns"`
+}
+
+func TestTimeT(t *testing.T) {
+	var tm TimeT
+	if err := DefaultConfig(&tm); err != nil {
+		t.Errorf("set defaults fail: %v", err)
+	} else {
+		assert(t, "tm.Timeout", 21*time.Minute+10*time.Second+99*time.Nanosecond, tm.Timeout)
 	}
 }

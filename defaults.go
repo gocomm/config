@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 func DefaultConfig(v interface{}) error {
@@ -112,6 +113,8 @@ func setFieldValue(name string, tag reflect.StructTag, v reflect.Value) (bool, e
 	return true, setPrimaryValue(name, defval, v)
 }
 
+var DurationType = reflect.TypeOf((time.Duration)(1))
+
 func setPrimaryValue(name, valstr string, v reflect.Value) error {
 	switch v.Kind() {
 	case reflect.Bool:
@@ -123,8 +126,18 @@ func setPrimaryValue(name, valstr string, v reflect.Value) error {
 		default:
 			return fmt.Errorf("invalid bool value(%s): %s", name, valstr)
 		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 		return parseNum(name, valstr, v.Type().Bits(), false, v)
+	case reflect.Int64:
+		if v.Type() == DurationType {
+			if d, err := time.ParseDuration(valstr); err == nil {
+				v.SetInt(int64(d))
+			} else {
+				return fmt.Errorf("invalid duration(%s): %s(%v)", name, valstr, err)
+			}
+		} else {
+			return parseNum(name, valstr, v.Type().Bits(), false, v)
+		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return parseNum(name, valstr, v.Type().Bits(), true, v)
 	case reflect.Float32, reflect.Float64:
@@ -188,5 +201,4 @@ func parseNum(name, valstr string, bitsize int, unsigned bool, val reflect.Value
 			return nil
 		}
 	}
-
 }
